@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Detectando…</title>
+<style>
+:root{--bg:#050a14;--ink:#d8e6ff;--cy:#3ee0ff;--gr:#7dffb0;--paper:#fbf7ea;--pen:#1b2a4a;--m1:#6c7a96;--m2:#3b455c;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Trebuchet MS",system-ui,sans-serif}
+body{background:radial-gradient(ellipse at 50% 20%,#0f2a44 0,#06101d 55%,#03060c 100%) fixed}
+#rain{position:fixed;inset:0;width:100%;height:100%;opacity:0;transition:opacity 2s;z-index:0;pointer-events:none}
+#rain.on{opacity:.28}
+body:after{content:"";position:fixed;inset:0;pointer-events:none;z-index:1;background:repeating-linear-gradient(#0000 0 2px,#0000001f 3px),radial-gradient(ellipse at center,#0000 55%,#000a 100%)}
+main{position:relative;z-index:2;max-width:440px;margin:0 auto;padding:18px 16px 50px;min-height:100vh;display:flex;flex-direction:column;align-items:center}
+main.shake{animation:sh .45s}
+@keyframes sh{0%,100%{transform:none}15%{transform:translate(-6px,3px)}30%{transform:translate(5px,-4px)}45%{transform:translate(-4px,-2px)}60%{transform:translate(4px,3px)}80%{transform:translate(-2px,1px)}}
+#flash{position:fixed;inset:0;opacity:0;pointer-events:none;z-index:60}
+#flash.go{animation:fl 1.2s ease-out}
+@keyframes fl{0%{opacity:0}6%{opacity:1}30%{opacity:.7}100%{opacity:0}}
+#start{margin-top:30vh;background:var(--cy);color:#03202a;border:0;border-radius:40px;padding:16px 28px;font:700 18px "Trebuchet MS",system-ui,sans-serif;box-shadow:0 0 24px #3ee0ff88}
+#stage{display:none;width:100%;flex-direction:column;align-items:center}
+.bubble{position:relative;background:var(--ink);color:#0b1220;border-radius:18px;padding:12px 16px;margin:6px 0 16px;font-size:16px;line-height:1.4;width:100%;display:none}
+.bubble:after{content:"";position:absolute;bottom:-10px;left:50%;margin-left:-10px;border:10px solid transparent;border-top-color:var(--ink);border-bottom:0}
+.robot{width:220px;display:flex;flex-direction:column;align-items:center}
+.head{width:120px;height:80px;background:linear-gradient(#8593ae,#5a6784);border-radius:22px;position:relative;border:3px solid var(--m2);margin-top:26px}
+.head:before{content:"";position:absolute;top:-24px;left:50%;width:4px;height:22px;background:var(--m2);margin-left:-2px}
+.head:after{content:"";position:absolute;top:-34px;left:50%;width:15px;height:15px;border-radius:50%;background:#1a3b46;margin-left:-7px;transition:.2s}
+.head.on:after{background:#fff;box-shadow:0 0 18px 6px var(--cy)}
+.eye{position:absolute;top:24px;width:22px;height:22px;border-radius:50%;background:#173039}
+.eye.l{left:22px}.eye.r{right:22px}
+.on .eye{background:var(--cy);box-shadow:0 0 14px var(--cy);animation:bl 4s infinite}
+@keyframes bl{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
+.mouth{position:absolute;bottom:12px;left:50%;width:40px;height:8px;margin-left:-20px;background:#10172a;border-radius:6px}
+.talk .mouth{animation:tk .28s infinite alternate}
+@keyframes tk{to{height:16px}}
+.neck{width:56px;height:14px;background:#f2f4f8;clip-path:polygon(0 0,100% 0,85% 100%,15% 100%)}
+.body{position:relative;width:220px;background:linear-gradient(#26375f,#141d34);border:3px solid #0b1124;border-radius:16px 16px 10px 10px;padding:8px}
+.crt{background:#cfc5ac;border-radius:10px;padding:5px;box-shadow:inset 0 0 0 2px #9d937c,0 2px 0 #fff3}
+.screen{position:relative;height:132px;border-radius:18px/14px;overflow:hidden;background:#020a07;box-shadow:inset 0 0 24px #000,inset 0 0 0 2px #000}
+.screen:after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(#0000 0 2px,#0006 3px),radial-gradient(ellipse at center,#0000 50%,#0009 100%);pointer-events:none}
+.bar{position:absolute;top:0;left:0;right:0;height:7px;background:linear-gradient(#5aa7ff,#9ff);opacity:0;z-index:2}
+.on .bar,.screen.live .bar{opacity:1}
+.code{display:none;position:absolute;left:8px;right:8px;top:12px;font:10px/1.35 ui-monospace,Menlo,monospace;color:#4dd98a;opacity:0;white-space:pre;word-break:break-all;animation:up 9s linear infinite;text-shadow:0 0 4px #2fa}
+.screen.live .code{opacity:.4}
+@keyframes up{to{transform:translateY(-50%)}}
+.lines{position:absolute;left:12px;right:8px;top:14px;z-index:1;font:10.5px/1.45 ui-monospace,Menlo,monospace;color:var(--gr);text-shadow:0 0 6px var(--gr);word-break:break-word}
+.lines .ok{color:var(--cy)}
+.cur:after{content:"▌";animation:cu .7s infinite}
+@keyframes cu{50%{opacity:0}}
+#panel{display:none;width:100%;flex-direction:column;align-items:stretch;margin-top:-44px;position:relative;z-index:3;transition:margin-top .7s ease}
+.paperbox{position:relative;overflow:hidden;padding:6px 6px 0}
+#paper{background:var(--paper);color:var(--pen);border-radius:4px;padding:16px 16px 12px;box-shadow:0 6px 18px #0008;position:relative;transition:transform 2s cubic-bezier(.55,0,.8,.6)}
+#paper.drop{transform:translateY(112%)}
+#paper h2{font-size:15px;margin:0 0 6px;font-weight:700}
+#paper input{display:block;width:100%;border:0;border-bottom:1.5px solid #9aa7c4;background:transparent;font:18px "Segoe Print","Bradley Hand",cursive;color:var(--pen);padding:8px 2px;outline:none}
+#paper input:focus{border-bottom-color:#0a7fa0}
+#scan{position:absolute;left:0;right:0;height:3px;background:var(--cy);box-shadow:0 0 14px 4px var(--cy);top:0;display:none}
+#scan.go{display:block;animation:sc 1.6s linear forwards}
+@keyframes sc{from{top:0}to{top:100%}}
+.sh-top{height:28px;background:linear-gradient(#66728e,#3f4963);border:3px solid #2b3349;border-radius:12px 12px 0 0;position:relative;z-index:3;margin-top:-1px}
+.sh-top:after{content:"";position:absolute;left:5%;right:5%;top:8px;height:8px;background:#05070d;border-radius:4px;box-shadow:inset 0 2px 4px #000}
+.sh-body{height:70px;background:linear-gradient(#515d78,#3b455c);border:3px solid #2b3349;border-top:0;display:flex;align-items:center;justify-content:space-between;padding:0 18px;position:relative;z-index:3}
+.sh-body b{font-size:12px;color:#c9d4ec;font-weight:600;letter-spacing:.3px}
+.led{width:13px;height:13px;border-radius:50%;background:#4a1818}
+.work .led{background:#ff3b3b;box-shadow:0 0 12px #f33;animation:bk .35s infinite}
+@keyframes bk{50%{opacity:.35}}
+.gear{width:36px;height:36px;border-radius:50%;border:6px dotted #b8c4de;background:#2b3349}
+.work .gear{animation:sp .45s linear infinite}
+.work .gear+.gear{animation-direction:reverse}
+@keyframes sp{to{transform:rotate(360deg)}}
+.basket{width:88%;height:120px;margin:0 auto;position:relative;overflow:hidden;border:3px solid #8e9bbb;border-top:0;border-radius:0 0 16px 16px;background:repeating-linear-gradient(90deg,#fff0 0 10px,#ffffff14 11px),linear-gradient(#ffffff0a,#ffffff22);z-index:1}
+.basket i{position:absolute;top:0;width:6px;height:44px;background:var(--paper);border-radius:1px;opacity:0;animation:fall 1.1s ease-in forwards}
+@keyframes fall{0%{opacity:0;transform:translateY(-50px) rotate(0)}12%{opacity:1}100%{opacity:1;transform:translateY(var(--e)) rotate(var(--r))}}
+#ok{margin:16px auto 0;background:var(--gr);color:#04210f;border:0;border-radius:30px;padding:14px 36px;font:700 17px "Trebuchet MS",system-ui,sans-serif;display:none;box-shadow:0 0 20px #7dffb066}
+#ok:disabled{opacity:.4}
+#end{display:none;text-align:center;font-size:18px;line-height:1.5;margin-top:16px}
+#end small{display:block;color:#93a4c6;font-size:14px;margin-top:8px}
+button:focus-visible,input:focus-visible{outline:2px solid var(--cy);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition-duration:.01s!important}}
+#stage{position:relative}
+#arms{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:5;overflow:visible}
+#arms path{fill:none;stroke-linecap:round}
+#arms .o{stroke:#0b1124;stroke-width:15}
+#arms .i{stroke:#2a3d68;stroke-width:9}
+#arms circle.h{fill:#f2f4f8;stroke:#0b1124;stroke-width:3}
+#arms circle.j{fill:#1d2b4c}
+#mute{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));right:12px;z-index:70;display:none;background:#0b1220cc;color:var(--ink);border:1px solid #3b455c;border-radius:20px;padding:8px 12px;font-size:16px}
+
+.body:before,.body:after{content:"";position:absolute;top:-4px;width:38px;height:36px;background:linear-gradient(#2a3d68,#141d34);border:3px solid #0b1124;border-radius:14px 14px 6px 6px;z-index:-1}
+.body:before{left:-20px}.body:after{right:-20px}
+.suit{position:relative;height:56px;margin-top:6px}
+.suit i{position:absolute;display:block}
+.suit .lap{top:0;width:46%;height:90%;background:#34508a}
+.suit .lap.l{left:0;clip-path:polygon(0 0,100% 0,84% 100%,0 42%)}
+.suit .lap.r{right:0;clip-path:polygon(0 0,100% 0,100% 42%,16% 100%)}
+.suit .shirt{left:50%;top:0;width:78px;height:100%;margin-left:-39px;background:#f2f4f8;clip-path:polygon(0 0,100% 0,50% 100%)}
+.suit .tie{left:50%;top:0;width:26px;height:80px;margin-left:-13px;background:linear-gradient(90deg,#9c1427,#d92b43,#9c1427);clip-path:polygon(30% 0,70% 0,62% 14%,100% 84%,50% 100%,0 84%,38% 14%)}
+.suit .seam{left:50%;top:0;width:2px;height:100%;margin-left:-1px;background:#0b1124}
+.suit .btn{left:calc(50% + 9px);width:9px;height:9px;border-radius:50%;background:#5b73ab;border:1px solid #0b1124}
+.suit .b1{top:10px}.suit .b2{top:34px}
+.legs{display:flex;justify-content:center;gap:10px;height:92px;overflow:hidden;transition:height .9s ease,opacity .9s ease;margin-top:-2px}
+.legs.gone{height:0;opacity:0}
+.leg{width:52px;display:flex;flex-direction:column;align-items:center}
+.leg .p{width:52px;height:64px;background:linear-gradient(90deg,#141d34,#22335b,#141d34);border:3px solid #0b1124;border-top:0}
+.leg .s{width:66px;height:22px;background:#202a42;border:2px solid #7e8fb5;margin-top:2px}
+.leg.l .s{transform:translateX(-7px);border-radius:14px 6px 4px 4px}
+.leg.r .s{transform:translateX(7px);border-radius:6px 14px 4px 4px}
+</style>
+</head>
+<body>
+<canvas id="rain"></canvas>
+<div id="flash"></div>
+<button id="mute" aria-label="Sonido">🔊</button>
+<main id="main">
+  <button id="start">Toca para despertar al robot</button>
+  <section id="stage">
+    <svg id="arms" aria-hidden="true"><path id="lo" class="o"/><path id="li" class="i"/><path id="ro" class="o"/><path id="ri" class="i"/><circle id="jl" class="j" r="9"/><circle id="jr" class="j" r="9"/><circle id="hl" class="h" r="13"/><circle id="hr" class="h" r="13"/></svg>
+    <div class="bubble" id="bub"></div>
+    <div class="robot" id="robot">
+      <div class="head" id="head"><span class="eye l"></span><span class="eye r"></span><span class="mouth"></span></div>
+      <div class="neck"></div>
+      <div class="body"><div class="crt"><div class="screen" id="screen">
+        <div class="bar"></div><div class="code" id="code"></div><div class="lines" id="scr"></div>
+      </div></div><div class="suit"><i class="seam"></i><i class="btn b1"></i><i class="btn b2"></i></div></div>
+      <div class="legs" id="legs"><div class="leg l"><div class="p"></div><div class="s"></div></div><div class="leg r"><div class="p"></div><div class="s"></div></div></div>
+    </div>
+
+    <div id="panel">
+      <div class="paperbox">
+        <div id="paper">
+          <h2>¿Quién crees que soy? Escribe hasta 4 posibilidades</h2>
+          <input maxlength="40" placeholder="Posibilidad 1" autocomplete="off">
+          <input maxlength="40" placeholder="Posibilidad 2" autocomplete="off">
+          <input maxlength="40" placeholder="Posibilidad 3" autocomplete="off">
+          <input maxlength="40" placeholder="Posibilidad 4 (opcional)" autocomplete="off">
+          <div id="scan"></div>
+        </div>
+      </div>
+      <div class="sh-top"></div>
+      <div class="sh-body" id="shb"><span class="gear"></span><b>trituradora</b><span class="led"></span><span class="gear"></span></div>
+      <div class="basket" id="basket"></div>
+      <button id="ok">Aceptar</button>
+    </div>
+    <p id="end"></p>
+  </section>
+</main>
+<script></script>
+<script>
+const $=id=>document.getElementById(id);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const scr=$("scr"), bub=$("bub"), robot=$("robot"), head=$("head");
+let AC=null;
+
+// Lluvia de código de fondo
+function rain(){
+  const c=$("rain"),x=c.getContext("2d");
+  const resize=()=>{c.width=innerWidth;c.height=innerHeight};resize();addEventListener("resize",resize);
+  const chars="01{}[]<>/=+;アイウエオ0123456789ABCDEF";const fs=15;
+  let cols=Math.ceil(c.width/fs),drops=Array.from({length:cols},()=>Math.random()*-50);
+  if(matchMedia("(prefers-reduced-motion:reduce)").matches)return;
+  setInterval(()=>{
+    cols=Math.ceil(c.width/fs);
+    x.fillStyle="rgba(3,8,14,.12)";x.fillRect(0,0,c.width,c.height);
+    x.fillStyle="#46e69a";x.font=fs+"px monospace";
+    for(let i=0;i<cols;i++){
+      if(drops[i]===undefined)drops[i]=0;
+      x.fillText(chars[Math.floor(Math.random()*chars.length)],i*fs,drops[i]*fs);
+      if(drops[i]*fs>c.height&&Math.random()>.97)drops[i]=0;drops[i]++;
+    }
+  },70);
+}
+// Código que corre en la pantalla del robot
+(function(){
+  const ch="0123456789ABCDEF{}[]()<>=+;:_";let s="";
+  for(let l=0;l<60;l++){let t="";const n=18+Math.floor(Math.random()*14);for(let i=0;i<n;i++)t+=ch[Math.floor(Math.random()*ch.length)];s+=t+"\n";}
+  $("code").textContent=s+s;
+})();
+
+// Sonidos
+function ctx(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();}catch(e){}return AC}
+function zap(){const A=ctx();if(!A)return;const o=A.createOscillator(),g=A.createGain();o.type="sawtooth";
+  o.frequency.setValueAtTime(1400,A.currentTime);o.frequency.exponentialRampToValueAtTime(90,A.currentTime+.5);
+  g.gain.setValueAtTime(.15,A.currentTime);g.gain.exponentialRampToValueAtTime(.001,A.currentTime+.5);
+  o.connect(g).connect(A.destination);o.start();o.stop(A.currentTime+.5)}
+function beep(f){const A=ctx();if(!A)return;const o=A.createOscillator(),g=A.createGain();o.type="square";o.frequency.value=f;g.gain.setValueAtTime(.05,A.currentTime);g.gain.exponentialRampToValueAtTime(.001,A.currentTime+.12);o.connect(g).connect(A.destination);o.start();o.stop(A.currentTime+.12)}
+function buzz(){const A=ctx();if(!A)return;const n=A.sampleRate*2,b=A.createBuffer(1,n,A.sampleRate),d=b.getChannelData(0);
+  for(let i=0;i<n;i++)d[i]=Math.random()*2-1;
+  const s=A.createBufferSource();s.buffer=b;const f=A.createBiquadFilter();f.type="bandpass";f.frequency.value=900;f.Q.value=.7;
+  const g=A.createGain();g.gain.setValueAtTime(0,A.currentTime);g.gain.linearRampToValueAtTime(.22,A.currentTime+.15);g.gain.linearRampToValueAtTime(0,A.currentTime+2);
+  const o=A.createOscillator();o.type="sawtooth";o.frequency.value=70;const og=A.createGain();og.gain.value=.07;
+  o.connect(og).connect(g);s.connect(f).connect(g).connect(A.destination);s.start();o.start();o.stop(A.currentTime+2)}
+
+async function type(el,text,cls){
+  const d=document.createElement("div");if(cls)d.className=cls;el.appendChild(d);
+  for(const c of text){d.textContent+=c;await sleep(48)}
+  return d;
+}
+async function say(text){
+  bub.style.display="block";bub.textContent="";robot.classList.add("talk");
+  for(const c of text){bub.textContent+=c;await sleep(26)}
+  robot.classList.remove("talk");
+}
+
+$("start").onclick=async()=>{
+  ctx();loadMusic();requestAnimationFrame(loop);
+  $("start").style.display="none";
+  $("stage").style.display="flex";
+  await sleep(900);
+  // El robot genera el destello desde su cabeza
+  const r=head.getBoundingClientRect();
+  const f=$("flash");
+  f.style.background="radial-gradient(circle at "+(r.left+r.width/2)+"px "+(r.top+r.height/2)+"px,#fff 0,#d8fbff 25%,#3ee0ff55 55%,#0000 85%)";
+  f.classList.add("go");zap();
+  head.classList.add("on");$("screen").classList.add("live");$("rain").classList.add("on");rain();
+  const step=async(text,ms,pct)=>{
+    beep(660);
+    const d=await type(scr,text);
+    const s=document.createElement("span");d.appendChild(s);
+    const t0=Date.now();let k=0;
+    while(Date.now()-t0<ms){
+      k=(k%3)+1;
+      s.textContent=".".repeat(k)+(pct?" "+Math.min(100,Math.round((Date.now()-t0)/ms*100))+"%":"");
+      await sleep(pct?130:400);
+    }
+    s.textContent=" ✔";s.className="ok";
+  };
+  await sleep(1500);
+  await step("> iniciando sistema",1600);
+  await step("> detectando mujer más bella",3400);
+  await step("> confirmando",2200);
+  await step("> verificando",2800,true);
+  beep(990);await sleep(300);
+  await type(scr,"> correcto","ok");
+  await sleep(800);
+  await type(scr,"> emitiendo mensaje","cur");
+  await sleep(2000);
+  await say("Hola. ¿Quién crees que soy? Escribe en la hoja. Lo que escribas solo lo sabré yo; después destruiré la hoja en la trituradora.");
+  $("panel").style.display="flex";
+  $("ok").style.display="block";$("ok").disabled=true;
+  armsMode="grab";
+};
+
+const inputs=[...document.querySelectorAll("#paper input")];
+inputs.forEach(i=>i.addEventListener("input",()=>{$("ok").disabled=!inputs.some(x=>x.value.trim())}));
+
+$("ok").onclick=async()=>{
+  $("ok").style.display="none";
+  const answers=inputs.map(i=>i.value.trim());
+  // Guardar las respuestas antes de comenzar la trituración.
+  try{
+    const response=await fetch("/api/responses",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({answers})
+    });
+    if(!response.ok) throw new Error("No se pudo guardar");
+  }catch(error){
+    bub.style.display="block";
+    bub.textContent="No se pudieron guardar tus respuestas. Comprueba la conexión e inténtalo de nuevo.";
+    $("ok").style.display="block";
+    $("ok").disabled=false;
+    return;
+  }
+  inputs.forEach(i=>i.disabled=true);
+  $("shb").scrollIntoView({block:"center",behavior:"smooth"});
+  bub.textContent="Escaneando la hoja…";
+  $("scan").classList.add("go");
+  await sleep(1800);
+  bub.textContent="Escaneo completo. Destruyendo la hoja…";
+  $("shb").classList.add("work");buzz();playMusic();
+  const bk=$("basket");
+  for(let i=0;i<46;i++){
+    const s=document.createElement("i");
+    s.style.left=(3+Math.random()*93)+"%";
+    s.style.animationDelay=(.4+Math.random()*1.6)+"s";
+    s.style.setProperty("--e",(120-44-3-Math.random()*20)+"px");
+    s.style.setProperty("--r",(Math.random()*80-40)+"deg");
+    bk.appendChild(s);
+  }
+  $("paper").classList.add("drop");armsMode="feed";
+  await sleep(2300);
+  inputs.forEach(i=>i.value="");
+  armsMode="dance";
+  setTimeout(()=>{if(!msrc)armsMode="rest"},12000);
+  $("paper").remove();
+  $("panel").style.marginTop="8px";
+  await sleep(500);
+  $("shb").classList.remove("work");
+  bub.style.display="block";
+  bub.textContent="Hoja destruida. No quedó ningún rastro de lo que escribiste. El robot ya no recuerda nada";
+  window.scrollTo({top:0,behavior:"smooth"});
+};
+
+// Música: se decodifica al inicio y suena al triturar
+let MB=null,msrc=null,mgain=null,ana=null,fdata=null,muted=false;
+async function loadMusic(){
+  try{
+    const A=ctx();
+    const response=await fetch("/static/music/robot.mp3");
+    if(!response.ok) throw new Error("Audio no disponible");
+    MB=await A.decodeAudioData(await response.arrayBuffer());
+  }catch(e){MB=null}
+}
+function playMusic(){
+  const A=ctx();if(!A||!MB)return;
+  msrc=A.createBufferSource();msrc.buffer=MB;
+  ana=A.createAnalyser();ana.fftSize=256;fdata=new Uint8Array(ana.frequencyBinCount);
+  mgain=A.createGain();mgain.gain.setValueAtTime(0,A.currentTime);
+  mgain.gain.linearRampToValueAtTime(muted?0:.7,A.currentTime+2);
+  msrc.connect(ana);msrc.connect(mgain);mgain.connect(A.destination);
+  msrc.onended=()=>{armsMode="rest"};
+  msrc.start();$("mute").style.display="block";
+}
+$("mute").onclick=()=>{muted=!muted;$("mute").textContent=muted?"🔇":"🔊";if(mgain)mgain.gain.value=muted?0:.7};
+
+// Brazos, manos y baile robótico (movimientos cuadrados, uno por golpe de música)
+let armsMode="rest",H={l:null,r:null},step=0,lastBeat=0,pk=.2;
+const SEQ=[[-60,-60],[-60,50],[0,0],[50,-60],[-60,-60],[50,50],[0,0],[-60,50]];
+const TILT=[0,12,0,-12],SHIFT=[0,8,0,-8];
+function arm(s,h,dir,o,i,j,hd,sq){
+  let d;
+  if(sq)d="M"+s.x+","+s.y+" L"+h.x+","+s.y+" L"+h.x+","+h.y;
+  else{const mx=(s.x+h.x)/2+dir*28,my=(s.y+h.y)/2+10;d="M"+s.x+","+s.y+" Q"+mx+","+my+" "+h.x+","+h.y}
+  $(o).setAttribute("d",d);$(i).setAttribute("d",d);
+  $(j).setAttribute("cx",s.x);$(j).setAttribute("cy",s.y);
+  $(hd).setAttribute("cx",h.x);$(hd).setAttribute("cy",h.y);
+}
+function loop(now){
+  requestAnimationFrame(loop);
+  const st=$("stage").getBoundingClientRect();
+  const bd=document.querySelector(".body"),br=bd.getBoundingClientRect();
+  let v=0;
+  if(ana){ana.getByteFrequencyData(fdata);let q=0;for(let i=1;i<6;i++)q+=fdata[i];
+    v=q/5/255;pk=Math.max(v,pk*.995);v=Math.pow(Math.min(1,v/Math.max(pk,.15)),3)}
+  const dn=armsMode==="dance",fd=armsMode==="feed";
+  if(dn||fd){
+    if((ana&&v>.55&&now-lastBeat>320)||now-lastBeat>(ana?700:480)){step++;lastBeat=now}
+  }
+  head.style.transform=dn?"translate("+SHIFT[step%4]+"px,"+(step%2?-6:0)+"px) rotate("+TILT[step%4]+"deg)":(fd?"translateY("+(step%2?-3:0)+"px)":"");
+  bd.style.transform=dn?"translateY("+(step%2?4:0)+"px)":"";
+  const lg=$("legs").children;lg[0].style.transform=dn&&step%2?"translateY(-5px)":"";lg[1].style.transform=dn&&!(step%2)?"translateY(-5px)":"";
+  const sl={x:br.left-st.left-4,y:br.top-st.top+30},sr={x:br.right-st.left+4,y:br.top-st.top+30};
+  const paper=$("paper"),pb=document.querySelector(".paperbox");
+  let tl,tr,k=.1;
+  if((armsMode==="grab"||fd)&&paper){
+    const p=paper.getBoundingClientRect(),box=pb.getBoundingClientRect();
+    const y=Math.min(p.top-st.top+4,box.bottom-st.top-10);
+    tl={x:p.left-st.left+18,y:y};tr={x:p.right-st.left-18,y:y};k=fd?.4:.09;
+  }else if(dn){
+    const pose=SEQ[step%SEQ.length];
+    tl={x:sl.x-44,y:sl.y+pose[0]};tr={x:sr.x+44,y:sr.y+pose[1]};k=1;
+  }else{tl={x:sl.x-16,y:sl.y+80};tr={x:sr.x+16,y:sr.y+80}}
+  if(!H.l){H.l={x:tl.x,y:tl.y};H.r={x:tr.x,y:tr.y}}
+  H.l.x+=(tl.x-H.l.x)*k;H.l.y+=(tl.y-H.l.y)*k;H.r.x+=(tr.x-H.r.x)*k;H.r.y+=(tr.y-H.r.y)*k;
+  arm(sl,H.l,-1,"lo","li","jl","hl",dn);arm(sr,H.r,1,"ro","ri","jr","hr",dn);
+}
+</script>
+</body>
+</html>

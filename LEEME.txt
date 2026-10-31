@@ -1,0 +1,22 @@
+PROYECTO ROBOT - PYDROID 3 Y RENDER
+
+PYDROID 3
+1) Instala Flask en Pydroid 3.
+2) Ejecuta server_v2.py.
+3) Abre http://127.0.0.1:5000 en Chrome.
+4) Clave pública inicial: 1234. Panel: /admin.
+
+GITHUB
+Sube el CONTENIDO de esta carpeta, no solo el ZIP. Repositorio privado recomendado. No subas respuestas.db ni contraseñas reales.
+
+RENDER
+Este proyecto usa SQLite. Render tiene filesystem efímero por defecto. El render.yaml configura disco persistente de 1 GB y plan Starter (de pago), para conservar la base de datos.
+
+Puedes desplegar como Blueprint usando render.yaml. O crear Web Service manualmente con:
+Runtime: Python
+Build Command: pip install -r requirements.txt
+Start Command: gunicorn --bind 0.0.0.0:$PORT server_v2:app
+
+En Environment configura ADMIN_PASSWORD con tu contraseña privada. ENTRY_PASSWORD queda en 1234. DB_PATH=/var/data/respuestas.db y RENDER=true. SESSION_SECRET debe ser una cadena aleatoria larga.
+
+Sin disco persistente, respuestas.db puede perderse en reinicios/despliegues. Para Render gratis habría que conectar una base externa persistente.

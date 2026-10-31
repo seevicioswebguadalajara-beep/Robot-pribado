@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: robot-respuestas-privadas
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT server_v2:app
+    plan: starter
+    disk:
+      name: robot-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: DB_PATH
+        value: /var/data/respuestas.db
+      - key: ENTRY_PASSWORD
+        value: "1234"
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: RENDER
+        value: "true"

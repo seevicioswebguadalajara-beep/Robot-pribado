@@ -14,7 +14,7 @@ app.config["SESSION_COOKIE_SECURE"] = os.environ.get("RENDER", "") == "true"
 
 # Para probar en Pydroid puedes dejar la clave pública en 1234.
 # Cambia ADMIN_PASSWORD por una contraseña privada que solo tú conozcas.
-ENTRY_PASSWORD = os.environ.get("ENTRY_PASSWORD", "0207")
+ENTRY_PASSWORD = os.environ.get("ENTRY_PASSWORD", "2019")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "2019")
 
 DB_PATH = Path(os.environ.get("DB_PATH", str(Path(__file__).with_name("respuestas.db"))))

@@ -1,10 +1,9 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from functools import wraps
-from pathlib import Path
-import sqlite3
 import os
 import secrets
 from datetime import datetime
+from supabase import create_client, Client
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "cambia-esta-clave-de-sesion-antes-de-publicar")
@@ -12,31 +11,15 @@ app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_SECURE"] = os.environ.get("RENDER", "") == "true"
 
-# Para probar en Pydroid puedes dejar la clave pública en 1234.
-# Cambia ADMIN_PASSWORD por una contraseña privada que solo tú conozcas.
-ENTRY_PASSWORD = os.environ.get("ENTRY_PASSWORD", "2019")
+# Contraseñas de acceso
+ENTRY_PASSWORD = os.environ.get("ENTRY_PASSWORD", "0207")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "2019")
 
-DB_PATH = Path(os.environ.get("DB_PATH", str(Path(__file__).with_name("respuestas.db"))))
+# Configuración de Supabase usando las variables de entorno de Render
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
-def get_db():
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-def init_db():
-    with get_db() as db:
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS responses (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                answer1 TEXT NOT NULL,
-                answer2 TEXT NOT NULL,
-                answer3 TEXT NOT NULL,
-                answer4 TEXT NOT NULL,
-                submitted_at TEXT NOT NULL
-            )
-        """)
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def entry_required(fn):
     @wraps(fn)
@@ -81,13 +64,19 @@ def save_response():
     answers = [x.strip() for x in answers]
     if not any(answers):
         return jsonify({"error": "Escribe al menos una posibilidad"}), 400
-    with get_db() as db:
-        db.execute(
-            """INSERT INTO responses
-            (answer1, answer2, answer3, answer4, submitted_at)
-            VALUES (?, ?, ?, ?, ?)""",
-            (*answers, datetime.now().astimezone().isoformat(timespec="seconds"))
-        )
+    
+    # Guardar directamente en la tabla 'responses' de Supabase
+    try:
+        supabase.table("responses").insert({
+            "answer1": answers[0],
+            "answer2": answers[1],
+            "answer3": answers[2],
+            "answer4": answers[3],
+            "submitted_at": datetime.now().astimezone().isoformat(timespec="seconds")
+        }).execute()
+    except Exception as e:
+        return jsonify({"error": "Error al guardar en la base de datos"}), 500
+
     return jsonify({"ok": True})
 
 @app.route("/admin", methods=["GET"])
@@ -108,10 +97,13 @@ def admin_login():
 @app.route("/api/admin/responses", methods=["GET"])
 @admin_required
 def list_responses():
-    with get_db() as db:
-        rows = db.execute(
-            "SELECT * FROM responses ORDER BY id DESC"
-        ).fetchall()
+    # Consultar las respuestas desde Supabase ordenadas de forma descendente por id
+    try:
+        response = supabase.table("responses").select("*").order("id", desc=True).execute()
+        rows = response.data
+    except Exception as e:
+        return jsonify({"error": "Error al obtener los datos"}), 500
+
     return jsonify([{
         "id": row["id"],
         "answers": [row["answer1"], row["answer2"], row["answer3"], row["answer4"]],
@@ -123,9 +115,5 @@ def logout():
     session.clear()
     return jsonify({"ok": True})
 
-# Crear la tabla también cuando Render inicia la app mediante Gunicorn.
-init_db()
-
 if __name__ == "__main__":
-    # Puerto local 5000: abre http://127.0.0.1:5000 en el navegador del teléfono.
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False)
